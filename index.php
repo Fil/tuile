@@ -70,7 +70,7 @@ class TileMode {
 			}
 			elseif (!$dim = getimagesize($mpc))
 				die ('source?');
-			$leaflet = file_get_contents('modeles/leaflet.html');
+			$leaflet = file_get_contents('template/leaflet.html');
 			$leaflet = str_replace('#OPUS', $this->sig, $leaflet);
 			$leaflet = str_replace('#WIDTH', $dim[0], $leaflet);
 			$leaflet = str_replace('#HEIGHT', $dim[1], $leaflet);
