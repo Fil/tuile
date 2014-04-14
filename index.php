@@ -1,6 +1,8 @@
 <?php
 
 define ('TILESIZE', 256);
+define ('_BIN_CONVERT', '/opt/local/bin/convert');
+define ('_BIN_IDENTIFY', '/opt/local/bin/identify');
 
 $a = $_SERVER['REQUEST_URI'];
 
@@ -37,7 +39,7 @@ class TileMode {
 	function display() {
 		if ($this->mode == 'leaflet') {
 			$qmpc = escapeshellarg($this->src);
-			$ident = `/opt/local/bin/identify $qmpc`;
+			$ident = exec(_BIN_IDENTIFY." ".$qmpc);
 			if (preg_match('/ (\d+)x(\d+) /', $ident, $r)) {
 				$dim = array_map('intval',array($r[2], $r[1]));
 			}
@@ -133,7 +135,7 @@ function create_level($mpc, $z, $dest) {
 
 
 	$factor = 100*(pow(2,$z-$zmax))."%";
-	$c = "/opt/local/bin/convert ".escapeshellarg('/Users/fil/Sites/tuile/'.$mpc."[$factor]")
+	$c = _BIN_CONVERT." ".escapeshellarg($mpc."[$factor]")
 		." -crop ".TILESIZE."x".TILESIZE
 		." -set filename:tile \"".$z."-%[fx:page.x/".TILESIZE."]-%[fx:page.y/".TILESIZE."]\""
 		." +repage +adjoin \"%[filename:tile].jpg\""
