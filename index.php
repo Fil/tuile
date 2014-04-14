@@ -30,15 +30,38 @@ class TileMode {
 	var $mode;
 	var $src;
 	var $sig;
+	var $local;
 	function TileMode($sig, $mode, $src) {
 		$this->mode = $mode;
 		$this->src = $src;
 		$this->sig = $sig;
+		$this->local = 'local/'.md5($this->src);
+
+		if (!file_exists($this->local)) {
+			$this->load();
+		}
+		if (!filesize($this->local)) {
+			error (404);
+		}
+	}
+
+	function load() {
+		mkdir (dirname($this->local), 0777, true);
+		touch ($this->local);
+
+		if ($i = file_get_contents($this->src)) {
+			($fp = fopen($this->local . '.tmp', 'w'))
+			&& fwrite($fp, $i)
+			&& fclose($fp)
+			&& rename($this->local . '.tmp', $this->local);
+		} else {
+			die ("BOUH PAS CHARGE");
+		}
 	}
 
 	function display() {
 		if ($this->mode == 'leaflet') {
-			$qmpc = escapeshellarg($this->src);
+			$qmpc = escapeshellarg($this->local);
 			$ident = exec(_BIN_IDENTIFY." ".$qmpc);
 			if (preg_match('/ (\d+)x(\d+) /', $ident, $r)) {
 				$dim = array_map('intval',array($r[2], $r[1]));
@@ -49,7 +72,7 @@ class TileMode {
 			$leaflet = str_replace('#OPUS', $this->sig, $leaflet);
 			$leaflet = str_replace('#WIDTH', $dim[0], $leaflet);
 			$leaflet = str_replace('#HEIGHT', $dim[1], $leaflet);
-			$leaflet = str_replace('#SOURCE', $this->src, $leaflet);
+			$leaflet = str_replace('#SOURCE', $this->local, $leaflet);
 			header('Content-Type: text/html');
 			echo $leaflet;
 			exit;
