@@ -121,7 +121,7 @@
 		|| null;
 
 	var opus = '#OPUS'; 
-	var tileserver = '/tuile/'+ opus +'/{z}/{x}/{y}/#SOURCE';
+	var tileserver = '{z}/{x}/{y}';
 
 	var maxz = Math.ceil(Math.log(Math.max(image.w, image.h)/tileSize)/Math.log(2));
 
