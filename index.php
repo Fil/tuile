@@ -4,8 +4,12 @@
 # http://tile.rezo.net/[base64:http://www.nnvl.noaa.gov/images/Green/SMNDVI-2012-week25-30000x15000.png]/[signature]/
 
 define ('TILESIZE', 256);
-define ('_BIN_CONVERT', '/opt/local/bin/convert');
-define ('_BIN_IDENTIFY', '/opt/local/bin/identify');
+
+define ('_BIN_CONVERT', 'convert');
+define ('_BIN_IDENTIFY', 'identify');
+
+#define ('_BIN_CONVERT', '/opt/local/bin/convert');
+#define ('_BIN_IDENTIFY', '/opt/local/bin/identify');
 
 $a = $_SERVER['REQUEST_URI'];
 
@@ -178,7 +182,7 @@ function create_level($mpc, $z, $dest) {
 		if (preg_match(",^\d+-\d+-\d+\.jpg$,S", $i)) {
 			$j = $dest.str_replace("-", "/", $i);
 			@mkdir(dirname($j), 0777, true);
-			$c = "/opt/local/bin/convert -extent ".TILESIZE."x".TILESIZE." -strip ".escapeshellarg($i)." ".escapeshellarg($j);
+			$c = _BIN_CONVERT." -extent ".TILESIZE."x".TILESIZE." -strip ".escapeshellarg($i)." ".escapeshellarg($j);
 			#echo "$c\n";
 			shell_exec($c);
 			unlink($i);
