@@ -87,6 +87,7 @@ class Tile {
 	var $z, $x, $y, $sig, $src;
 	private $dir;
 	private $cache;
+	var $local;
 
 	function Tile($z, $x, $y, $sig, $src) {
 		$this->z = $z;
@@ -94,6 +95,7 @@ class Tile {
 		$this->y = $y;
 		$this->src = $src;
 		$this->sig = $sig;
+		$this->local = 'local/'.rawurlencode($this->src);
 
 		$this->dir = 'cache/'. rawurlencode($this->src) . '/' ;
 		$this->cache = $this->dir . ($this->z) . '/' . ($this->x) . '/' . ($this->y) . '.jpg';
@@ -121,7 +123,7 @@ class Tile {
 
 		else
 		{
-			create_level($this->src,$this->z, $this->dir);
+			create_level($this->local,$this->z, $this->dir);
 		}
 
 		if ($this->exists())
@@ -151,7 +153,7 @@ function create_level($mpc, $z, $dest) {
 		$dim = array_map('intval',array($r[2], $r[1]));
 	}
 	elseif (!$dim = getimagesize($mpc))
-		die ('source?');
+		die ('source2?');
 
 	$h = $dim[0]; $w=$dim[1];
 
@@ -164,6 +166,8 @@ function create_level($mpc, $z, $dest) {
 		." -set filename:tile \"".$z."-%[fx:page.x/".TILESIZE."]-%[fx:page.y/".TILESIZE."]\""
 		." +repage +adjoin \"%[filename:tile].jpg\""
 	;
+
+	#echo $c; exit;
 
 	$a = exec ($c, $output, $return_var);
 
@@ -181,7 +185,7 @@ function create_level($mpc, $z, $dest) {
 		}
 	}
 
-	echo "\ndone\n";
+	#echo "\ndone\n";
 
 }
 
