@@ -123,6 +123,7 @@ class Tile {
 
 		else
 		{
+		
 			create_level($this->local,$this->z, $this->dir);
 		}
 
@@ -178,7 +179,7 @@ function create_level($mpc, $z, $dest) {
 		if (preg_match(",^\d+-\d+-\d+\.jpg$,S", $i)) {
 			$j = $dest.str_replace("-", "/", $i);
 			@mkdir(dirname($j), 0777, true);
-			$c = "/opt/local/bin/convert -extent ".TILESIZE."x".TILESIZE." -strip ".escapeshellarg($i)." ".escapeshellarg($j);
+			$c = _BIN_CONVERT." -extent ".TILESIZE."x".TILESIZE." -strip ".escapeshellarg($i)." ".escapeshellarg($j);
 			#echo "$c\n";
 			shell_exec($c);
 			unlink($i);
