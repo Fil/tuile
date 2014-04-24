@@ -1,7 +1,7 @@
 <?php
 
-# http://tile.rezo.net/[base64:http://www.nnvl.noaa.gov/images/Green/SMNDVI-2012-week25-30000x15000.png]/[signature]/z/x/y.jpg
-# http://tile.rezo.net/[base64:http://www.nnvl.noaa.gov/images/Green/SMNDVI-2012-week25-30000x15000.png]/[signature]/
+# http://tile.rezo.net/[signature]/[base64:http://www.nnvl.noaa.gov/images/Green/SMNDVI-2012-week25-30000x15000.png]/z/x/y.jpg
+# http://tile.rezo.net/[signature]/[base64:http://www.nnvl.noaa.gov/images/Green/SMNDVI-2012-week25-30000x15000.png]/
 
 define ('TILESIZE', 256);
 
@@ -13,17 +13,19 @@ define ('_BIN_IDENTIFY', 'identify');
 
 $a = $_SERVER['REQUEST_URI'];
 
-if (preg_match(',tuile/([^/]+)/([0-9a-f]+)/(\d+)/(\d+)/(\d+)$,', $a, $r)) {
-	list(, $b64, $sig, $z, $x, $y) = $r;
+if (preg_match(',tuile/([0-9a-f]+)/([^/]+)/(\d+)/(\d+)/(\d+)$,', $a, $r)) {
+	list(, $sig, $b64, $z, $x, $y) = $r;
 	$src = @base64_decode($b64);
 	$tile = new Tile($z, $x, $y, $sig, $src);
 	$tile->display();
 } else
-if (preg_match(',tuile/([^/]+)/([0-9a-f]+)/$,', $a, $r)) {
-	list(, $b64, $sig) = $r;
+if (preg_match(',tuile/([0-9a-f]+)/([^/]+)(/|\.json)$,', $a, $r)) {
+	list(, $sig, $b64, $mode) = $r;
 	$src = @base64_decode($b64);
 	$tile = new TileMode($sig, $src);
-	$tile->display();
+
+	$mode = ($mode == '/' ? '' : 'json');
+	$tile->display($mode);
 } else {
 	error(404);
 }
@@ -39,10 +41,13 @@ class TileMode {
 	var $src;
 	var $sig;
 	var $local;
+	private $dir;
+
 	function TileMode($sig, $src) {
 		$this->src = $src;
 		$this->sig = $sig;
 		$this->local = 'local/'.rawurlencode($this->src);
+		$this->dir = 'cache/'. rawurlencode($this->src) . '/' ;
 
 		if (!file_exists($this->local)) {
 			$this->load();
@@ -66,22 +71,36 @@ class TileMode {
 		}
 	}
 
-	function display() {
-			$qmpc = escapeshellarg($this->local);
+	function display($mode=null) {
+		if ($mode == 'json') {
+			header('Content-Type: text/plain; charset=utf-8');
+			echo json_encode($this, JSON_PRETTY_PRINT);
+			exit;
+		}
+		
+		if (!$leaflet = @file_get_contents($f = $this->dir.'/index.html')) {
+			$mpc = $this->local;
+			$qmpc = escapeshellarg($mpc);
 			$ident = exec(_BIN_IDENTIFY." ".$qmpc);
 			if (preg_match('/ (\d+)x(\d+) /', $ident, $r)) {
 				$dim = array_map('intval',array($r[2], $r[1]));
 			}
 			elseif (!$dim = getimagesize($mpc))
-				die ('source?');
+				die ("source '$mpc'?");
 			$leaflet = file_get_contents('template/leaflet.html');
 			$leaflet = str_replace('#OPUS', $this->sig, $leaflet);
 			$leaflet = str_replace('#WIDTH', $dim[0], $leaflet);
 			$leaflet = str_replace('#HEIGHT', $dim[1], $leaflet);
 			$leaflet = str_replace('#SOURCE', $this->local, $leaflet);
-			header('Content-Type: text/html');
-			echo $leaflet;
-			exit;
+
+
+			($fp = @fopen($f, 'w'))
+			&& @fwrite($fp, $leaflet)
+			&&@fclose($fp);
+		}
+		header('Content-Type: text/html; charset=utf-8');
+		echo $leaflet;
+		exit;
 	}
 }
 

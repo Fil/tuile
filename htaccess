@@ -1,4 +1,4 @@
 RewriteEngine On
-RewriteRule ^([^/]+)/([0-9a-f]+)/ index.php
+RewriteRule ^([0-9a-f]+)/([^/]+)(/|\.json) index.php
 
 
