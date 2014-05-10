@@ -25,9 +25,7 @@
 		}
     </style>
 	<script src="/tuile/template/leaflet.js?v=0.7.2" type="text/javascript"></script>
-	<script src="/tuile/template/Control.FullScreen.js" type="text/javascript"></script>
 	<script src="/tuile/template/jquery.min.js?v=1.10.1" type="text/javascript"></script>
-	<script src="/tuile/template/leaflet-hash.js" type="text/javascript"></script>
 	
 </head>
 <body>
@@ -85,13 +83,8 @@
 		scrollWheelZoom: false
 	});
 
-	var hash = new L.Hash(map); // hash in the URL
-
 	var center = [0.77/zoomInitial,1.0/zoomInitial];
-	if (!window.location.hash
-	|| (window.location.hash == "#1/1/1")  // zoom 1
-	|| (window.location.hash == "#2/0.4/0.5")  // zoom 2
-	) map.setView(center,zoomInitial);
+	map.setView(center,zoomInitial);
 
 	map.on('zoomend', function() {
 		$('a.leaflet-control-zoom-in').css({
@@ -101,9 +94,6 @@
 			opacity: (map.getZoom() == map.minZoom) ? 0.3 : 1
 		});
 	});
-
-	//var fullScreen = new L.Control.FullScreen();
-	//map.addControl(fullScreen);
 
 	var jardin = new L.TileLayer(tileserver, {
 		attribution: ' ',
