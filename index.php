@@ -48,7 +48,6 @@ class TileMode {
 		$this->sig = $sig;
 		$this->local = 'local/'.rawurlencode($this->src);
 		$this->dir = 'cache/'. rawurlencode($this->src) . '/' ;
-
 		if (!file_exists($this->local)) {
 			$this->load();
 		}
@@ -110,6 +109,8 @@ class Tile {
 	var $z, $x, $y, $sig, $src;
 	private $dir;
 	private $cache;
+	private $db;
+	private $tile;
 	var $local;
 
 	function Tile($z, $x, $y, $sig, $src) {
@@ -136,7 +137,25 @@ class Tile {
 	}
 
 	function exists() {
-		return @file_exists($this->cache);
+		// src/z,x,y is a mbtiles.
+		if (@file_exists($mbtiles = '../IMG/mbtiles/' . $this->src . '.mbtiles')) {
+			try {
+				$this->db = new PDO('sqlite:' . $mbtiles, '', '', array(PDO::ATTR_PERSISTENT => true));
+			} catch (Exception $exc) {
+				echo $exc->getTraceAsString();
+				die;
+			}
+			// flip
+			$z = floatval($this->z);
+			$y = floatval($this->y);
+			$x = floatval($this->x);
+			                  
+			$y = pow(2, $z) - 1 - $y;
+			$result = $this->db->query('select tile_data as t from tiles where zoom_level=' . $z . ' and tile_column=' . $x . ' and tile_row=' . $y);
+			return $this->tile = ($result ? $result->fetchColumn() : false);
+		}
+		else
+			return @file_exists($this->cache);
 	}
 
 	function create() {
@@ -158,8 +177,18 @@ class Tile {
 		if (!$this->exists()) {
 			error (404);
 		}
-		header('Content-Type: image/jpeg');
-		@readfile($this->cache);
+		$mbtiles = '../IMG/mbtiles/' . $this->src . '.mbtiles';
+		if ($this->tile) {
+			// JPEG magic number = FFD8
+			$magic = substr($this->tile, 0,2) == chr(255) . chr(216)
+				? 'jpeg'
+				: 'png';
+			header('Content-Type: image/' . $magic);
+			echo $this->tile;
+		} else {
+			header('Content-Type: image/jpeg');
+			@readfile($this->cache);
+		}
 		exit;
 	}
 
@@ -172,7 +201,8 @@ function create_level($mpc, $z, $dest) {
 	touch ($dest.$z.'/index.html');
 
 	$qmpc = escapeshellarg($mpc);
-	$ident = `/opt/local/bin/identify $qmpc`;
+	$c = _BIN_IDENTIFY . ' ' . $qmpc;
+	$ident = `$c`;
 	if (preg_match('/ (\d+)x(\d+) /', $ident, $r)) {
 		$dim = array_map('intval',array($r[2], $r[1]));
 	}
@@ -191,8 +221,7 @@ function create_level($mpc, $z, $dest) {
 		." +repage +adjoin \"%[filename:tile].jpg\""
 	;
 
-	#echo $c; exit;
-
+	echo $c;
 	$a = exec ($c, $output, $return_var);
 
 	# redispatcher le niveau dans $dest/z/y/x.jpg
@@ -203,7 +232,7 @@ function create_level($mpc, $z, $dest) {
 			$j = $dest.str_replace("-", "/", $i);
 			@mkdir(dirname($j), 0777, true);
 			$c = _BIN_CONVERT." -extent ".TILESIZE."x".TILESIZE." -strip ".escapeshellarg($i)." ".escapeshellarg($j);
-			#echo "$c\n";
+			echo "$c\n";
 			shell_exec($c);
 			unlink($i);
 		}
